@@ -1,3 +1,6 @@
+window.onerror = function() {
+	console.error(...[arguments]);
+};
 const selectEl = document.querySelector.bind(document);
 function GET(url, callback) {
 	var req = new XMLHttpRequest();
@@ -15,15 +18,45 @@ function GET(url, callback) {
 }
 function passAttr(program, dataType, name, stuffs) {
 	var loc = gl.getUniformLocation(program, name);
+	if(!loc) {
+		console.log("could not find that thingy " + name);
+		return;
+	}
 	var thing = `uniform${dataType}`;
-	alert(gl[thing]);
-	gl[thing](loc, ...stuffs);
+	if(stuffs instanceof Array) {
+		gl[thing](loc, ...stuffs);
+	} else {
+		gl[thing](loc, stuffs);
+	}
+	//console.log("passed thingy " + name + " as " + stuffs);
 }
 
 var can, gl;
 var vertCode, fragCode;
+var sp, il, compiled;
+var translation = [0, 0], zoom = 1;
+var mouse = [0, 0, 0];
+var editor;
+var themeSwitch, theme = 0;
+var runBtn;
 window.addEventListener("load", () => {
 	can = selectEl("canvas");
+	can.onmouseenter = function() {
+		mouse[2] = 1;
+		console.log("mouseenter");
+	}
+	can.onmousemove = function(e) {
+		var box = can.getBoundingClientRect();
+		var x = e.pageX - box.x;
+		var y = e.pageY - box.y;
+		mouse[0] = x;
+		mouse[1] = y;
+		console.log("mousemove", [mouse[0], mouse[1]]);
+	};
+	can.onmouseleave = function() {
+		mouse[2] = 0;
+		console.log("mouseleave");
+	};
 	gl = can.getContext("webgl") || can.getContext("experimental-webgl");
 	
 	GET("vert.vert", function(t) {
@@ -38,11 +71,22 @@ window.addEventListener("load", () => {
 			start();
 		}
 	});
+	
+	themeSwitch = selectEl("#themeSwitch");
+	themeSwitch.addEventListener("change", () => {
+		theme = themeSwitch.value;
+	});
+	runBtn = selectEl("#runBtn");
+	runBtn.addEventListener("click", () => {
+		run();
+	});
 });
 
 function start() {
-	//alert(vertCode);
-	//alert(fragCode);
+	// The Ace Editor stuffs
+	editor = ace.edit("editor");
+	editor.setTheme("ace/theme/pastel_on_dark");
+	editor.session.setMode("ace/mode/glsl");
 	
 	// The quad
 	var verts = [
@@ -52,6 +96,7 @@ function start() {
 		1., 1., 0.
 	];
 	var indices = [0, 1, 2, 1, 2, 3];
+	il = indices.length;
 	
 	// Vertices buffer
 	var vb = gl.createBuffer();
@@ -75,8 +120,14 @@ function start() {
 	gl.shaderSource(fs, fragCode);
 	gl.compileShader(fs);
 	
+	compiled = gl.getShaderParameter(fs, gl.COMPILE_STATUS);
+	console.log("Compiled: " + compiled);
+	var compilation = gl.getShaderInfoLog(fs);
+	console.log("Shader log: " + compilation);
+	if(!compiled) return;
+	
 	// Shader program
-	var sp = gl.createProgram();
+	sp = gl.createProgram();
 	gl.attachShader(sp, vs);
 	gl.attachShader(sp, fs);
 	gl.linkProgram(sp);
@@ -89,16 +140,55 @@ function start() {
 	gl.vertexAttribPointer(coordsAttr, 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(coordsAttr);
 	
-	passAttr(sp, "1f", "iTime", 0.0);
-	passAttr(sp, "2f", "screenRes", [can.width, can.height]);
-	setTimeout(function() {
-		passAttr(sp, "1f", "iTime", 1.0);
-	}, 2000);
-	
 	// Drawing!
 	gl.clearColor(1., 1., 1., 1.);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.viewport(0, 0, can.width, can.height);
-	gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
-	//gl.drawArrays(gl.TRIANGLES, 0, 3);
+	animate();
+}
+function animate() {
+	passAttr(sp, "2f", "iResolution", [can.width, can.height]);
+	passAttr(sp, "1f", "iTime", performance.now() / 1000);
+	passAttr(sp, "1i", "theme", theme);
+	
+	passAttr(sp, "2f", "translation", translation);
+	passAttr(sp, "1f", "zoom", zoom);
+	passAttr(sp, "3f", "iMouse", mouse);
+	
+	gl.drawElements(gl.TRIANGLES, il, gl.UNSIGNED_SHORT, 0);
+	
+	if(compiled) {
+		window.requestAnimationFrame(animate);
+	}
+}
+function run() {
+	// Update fragment code
+	var newCode = fragCode.split("/*SDFSTART*/")[0] + "/*SDFSTART*/";
+	newCode += editor.getValue();
+	newCode += "/*SDFEND*/" + fragCode.split("/*SDFEND*/")[1];
+	fragCode = newCode;
+	
+	// Vertex shader
+	var vs = gl.createShader(gl.VERTEX_SHADER);
+	gl.shaderSource(vs, vertCode);
+	gl.compileShader(vs);
+	
+	// Fragment shader
+	var fs = gl.createShader(gl.FRAGMENT_SHADER);
+	gl.shaderSource(fs, fragCode);
+	gl.compileShader(fs);
+	
+	compiled = gl.getShaderParameter(fs, gl.COMPILE_STATUS);
+	console.log("Compiled: " + compiled);
+	var compilation = gl.getShaderInfoLog(fs);
+	console.log("Shader log: " + compilation);
+	if(!compiled) return;
+	
+	// Shader program
+	sp = null;
+	sp = gl.createProgram();
+	gl.attachShader(sp, vs);
+	gl.attachShader(sp, fs);
+	gl.linkProgram(sp);
+	gl.useProgram(sp);
 }
