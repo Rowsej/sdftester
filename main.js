@@ -38,6 +38,10 @@ var translation = [0, 0], zoom = 1;
 var mouse = [0, 0, 0];
 var editor;
 var themeSwitch, theme = 0;
+var iTime = 0, startTime = 0, timeEl, displayTimeInMillis = false;
+var restartBtn, playPauseBtn, play = true;
+var fpsEl, lastFramerateCheckTime = 0, frames = 0;
+var editorFontSizeInput;
 var runBtn;
 window.addEventListener("load", () => {
 	can = selectEl("canvas");
@@ -75,6 +79,38 @@ window.addEventListener("load", () => {
 	themeSwitch = selectEl("#themeSwitch");
 	themeSwitch.addEventListener("change", () => {
 		theme = themeSwitch.value;
+		startTime = performance.now() - iTime;
+		if(!play) {
+			animate();
+		}
+	});
+	timeEl = selectEl("#timeEl");
+	timeEl.addEventListener("click", () => {
+		displayTimeInMillis = !displayTimeInMillis;
+		startTime = performance.now() - iTime;
+		if(!play) {
+			animate();
+		}
+	});
+	restartBtn = selectEl("#restartBtn");
+	restartBtn.addEventListener("click", () => {
+		startTime = performance.now();
+		if(!play) {
+			animate();
+		}
+	});
+	playPauseBtn = selectEl("#playPauseBtn");
+	playPauseBtn.addEventListener("click", () => {
+		playPauseBtn.innerHTML = (play = !play)? "&#9208;" : "&#9654;";
+		if(play) {
+			startTime = performance.now() - iTime;
+			animate();
+		}
+	});
+	fpsEl = selectEl("#fpsEl");
+	editorFontSizeInput = selectEl("#editorFontSizeInput");
+	editorFontSizeInput.addEventListener("input", () => {
+		editor.setOption("fontSize", editorFontSizeInput.value + "px");
 	});
 	runBtn = selectEl("#runBtn");
 	runBtn.addEventListener("click", () => {
@@ -87,6 +123,7 @@ function start() {
 	editor = ace.edit("editor");
 	editor.setTheme("ace/theme/pastel_on_dark");
 	editor.session.setMode("ace/mode/glsl");
+	editor.setOption("fontSize", "16px");
 	
 	// The quad
 	var verts = [
@@ -124,6 +161,7 @@ function start() {
 	console.log("Compiled: " + compiled);
 	var compilation = gl.getShaderInfoLog(fs);
 	console.log("Shader log: " + compilation);
+	play = play && compiled;
 	if(!compiled) return;
 	
 	// Shader program
@@ -147,8 +185,20 @@ function start() {
 	animate();
 }
 function animate() {
+	iTime = performance.now() - startTime;
+	timeEl.innerHTML = displayTimeInMillis? ~~iTime + "ms" : (iTime / 1000).toFixed(2) + "s";
+	
+	frames++;
+	var n = performance.now();
+	var t = n - lastFramerateCheckTime;
+	if(t > 500) {
+		fpsEl.innerHTML = (frames / t * 1000).toFixed(2) + " FPS";
+		frames = 0;
+		lastFramerateCheckTime = n;
+	}
+	
 	passAttr(sp, "2f", "iResolution", [can.width, can.height]);
-	passAttr(sp, "1f", "iTime", performance.now() / 1000);
+	passAttr(sp, "1f", "iTime", iTime / 1000);
 	passAttr(sp, "1i", "theme", theme);
 	
 	passAttr(sp, "2f", "translation", translation);
@@ -157,7 +207,7 @@ function animate() {
 	
 	gl.drawElements(gl.TRIANGLES, il, gl.UNSIGNED_SHORT, 0);
 	
-	if(compiled) {
+	if(play) {
 		window.requestAnimationFrame(animate);
 	}
 }
