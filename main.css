@@ -3,7 +3,7 @@ body {
 	background: #CCC;
 }
 canvas {
-	border: 1px solid black;
+	width: 100%;
 }
 h1 {
 	text-align: center;
@@ -30,8 +30,14 @@ h1 {
 }
 #editor {
 	display: inline-block;
-	width: 512px;
-	height: 512px;
+	width: 100%;
+	height: 39.2vw; /* 80vw * 49% */
+}
+.toolbar {
+	width: 100%;
+	height: auto;
+	background: #AAA;
+	font-weight: bold;
 }
 button {
 	padding: 0 7px;
