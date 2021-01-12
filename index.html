@@ -14,19 +14,29 @@
 		<div class="main">
 			<div class="left">
 				<canvas width="512" height="512">Sorry, your browser doesn't support the &lt;canvas&gt; element.</canvas>
-				<button id="restartBtn">⏮</button>
-				<button id="playPauseBtn">▶️</button>
-				<h3>Theme</h3>
-				<select id="themeSwitch">
-					<option value="0" selected>Classic</option>
-					<option value="1">The IQ</option>
-				</select>
+				<div class="toolbar">
+					<button id="restartBtn">&#9198;</button>
+					<button id="playPauseBtn">&#9208;</button>
+					<span id="timeEl">0.00s</span>
+					<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+					<span id="fpsEl">0.0 FPS</span>
+					<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+					<span>Theme:</span>
+					<select id="themeSwitch">
+						<option value="0" selected>Classic</option>
+						<option value="1">The IQ</option>
+					</select>
+				</div>
 			</div>
 			<div class="right">
 				<div id="editor">float sdf(vec2 uv) {
 	return length(uv) - (.3 + sin(iTime) * .2);
 }</div>
-				<button id="runBtn">▶️</button>
+				<div class="toolbar">
+					<button id="runBtn">&#9654;</button>
+					<span>Font size:</span>
+					<input type="range" min="8" max="32" value="16" id="editorFontSizeInput"/>
+				</div>
 			</div>
 		</div>
 	</body>
