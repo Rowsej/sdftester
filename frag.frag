@@ -14,13 +14,10 @@ float sdf(vec2 uv) {
 }
 /*SDFEND*/
 
-vec3 themeClassic(vec2 uv, float d, vec2 mouse) {
-	/*if(mouse.x > 0. && abs(mouse.y) < .01) {
-		return vec3(.3);
-	} else {*/
+vec3 themeClassic(vec2 uv, float d, vec4 mouse) {
 	if(d < 0. && d > -.02) {
 		return vec3(.6, .6, 1.);
-	} else if(mouse.x > 0. && mouse.y < 0. && mouse.y > -.02) {
+	} else if(mouse.x > 0. && ((mouse.y < 0. && mouse.y > -.02) || length(uv - mouse.zw) < .02)) {
 		return vec3(.3);
 	} else {
 		float lineSize = .005;
@@ -37,9 +34,8 @@ vec3 themeClassic(vec2 uv, float d, vec2 mouse) {
 			return bg;
 		}
 	}
-	//}
 }
-vec3 themeIQ(vec2 uv, float d, vec2 mouse) {
+vec3 themeIQ(vec2 uv, float d, vec4 mouse) {
 	if(mouse.x > 0. && abs(mouse.y) < .01) {
 		return vec3(.3);
 	} else {
@@ -66,28 +62,19 @@ void main(void) {
 	
 	float d = sdf(uv);
 	float mouseD = 0.;
+	vec2 actualMouseCoords;
 	if(iMouse.z > 0.) {
-		vec2 actualMouseCoords = iMouse.xy / iResolution - .5;
+		actualMouseCoords = iMouse.xy / iResolution - .5;
 		actualMouseCoords *= vec2(2., -2.);
 		mouseD = length(actualMouseCoords - uv) - sdf(actualMouseCoords);
 	}
-	vec2 m = vec2(iMouse.z, mouseD);
+	vec4 m = vec4(iMouse.z, mouseD, actualMouseCoords);
 	vec3 col;
 	if(theme == 0) {
-		//themeClassic(col, uv, d, vec2(iMouse.z, mouseD));
 		col = themeClassic(uv, d, m);
 	} else if(theme == 1) {
-		//themeIQ(col, uv, d, vec2(iMouse.z, mouseD));
 		col = themeIQ(uv, d, m);
 	}
-	/*if(iMouse.z > 0.) {
-		vec2 actualMouseCoords = iMouse.xy / iResolution - .5;
-		actualMouseCoords *= vec2(2., -2.);
-		float mouseD = length(actualMouseCoords - uv) - sdf(actualMouseCoords);
-		if(mouseD < 0.) {
-			col = vec3(.7);
-		}
-	}*/
 	//col = .5 + .5 * cos(iTime + uv.xyx + vec3(0., 2., 4.));
 	gl_FragColor = vec4(col, 1.);
 }
