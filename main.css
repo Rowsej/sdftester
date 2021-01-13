@@ -7,14 +7,16 @@ canvas {
 }
 h1 {
 	text-align: center;
+	width: 100%;
+	position: absolute;
+	top: 0;
+	height: 5vh;
 }
 .main {
 	margin: auto;
 	position: absolute;
-	left: 0;
-	right: 0;
-	top: 0;
-	bottom: 0;
+	left: 10vw;
+	top: 10vh;
 	width: 80vw;
 	height: 80vh;
 	background: #CCC;
@@ -46,4 +48,13 @@ button {
 	font-size: 30px;
 	background: none;
 	border: none;
+}
+.log > span {
+	display: block;
+}
+.green {
+	color: green;
+}
+.red {
+	color: red;
 }
