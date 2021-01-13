@@ -30,6 +30,26 @@ function passAttr(program, dataType, name, stuffs) {
 	}
 	//console.log("passed thingy " + name + " as " + stuffs);
 }
+function compile(shader) {
+	var startT = performance.now();
+	gl.compileShader(shader);
+	var elapsed = performance.now() - startT;
+	
+	var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+	console.log("Compiled: " + compiled);
+	hasCompiledEl.innerHTML = "<span class='" + (compiled? "green" : "red") + "'>" + compiled + "</span>";
+	
+	console.log("Compilation time: " + elapsed);
+	compilationTimeEl.innerHTML = displayTimeInMillis? elapsed + "ms" : (elapsed / 1000).toFixed(2) + "s";
+	
+	var compilation = gl.getShaderInfoLog(shader);
+	console.log("Shader log: " + compilation);
+	compilationNotesEl.innerText = compilation.length? compilation : "<none>";
+	if(compilationNotesEl.innerText != "<none>") {
+		compilationNotesEl.innerHTML = "<span class='red'>" + compilationNotesEl.innerHTML + "</span>";
+	}
+	return compiled;
+}
 
 var can, gl;
 var vertCode, fragCode;
@@ -42,6 +62,7 @@ var iTime = 0, startTime = 0, timeEl, displayTimeInMillis = false;
 var restartBtn, playPauseBtn, play = true;
 var fpsEl, lastFramerateCheckTime = 0, frames = 0;
 var editorFontSizeInput;
+var hasCompiledEl, compilationTimeEl, compilationNotesEl;
 var runBtn;
 window.addEventListener("load", () => {
 	can = selectEl("canvas");
@@ -112,6 +133,9 @@ window.addEventListener("load", () => {
 	editorFontSizeInput.addEventListener("input", () => {
 		editor.setOption("fontSize", editorFontSizeInput.value + "px");
 	});
+	hasCompiledEl = selectEl("#hasCompiledEl");
+	compilationTimeEl = selectEl("#compilationTimeEl");
+	compilationNotesEl = selectEl("#compilationNotesEl");
 	runBtn = selectEl("#runBtn");
 	runBtn.addEventListener("click", () => {
 		run();
@@ -155,14 +179,12 @@ function start() {
 	// Fragment shader
 	var fs = gl.createShader(gl.FRAGMENT_SHADER);
 	gl.shaderSource(fs, fragCode);
-	gl.compileShader(fs);
 	
-	compiled = gl.getShaderParameter(fs, gl.COMPILE_STATUS);
-	console.log("Compiled: " + compiled);
-	var compilation = gl.getShaderInfoLog(fs);
-	console.log("Shader log: " + compilation);
-	play = play && compiled;
-	if(!compiled) return;
+	var compiled = compile(fs);
+	play == play && compiled;
+	if(!compiled) {
+		return;
+	}
 	
 	// Shader program
 	sp = gl.createProgram();
@@ -226,13 +248,12 @@ function run() {
 	// Fragment shader
 	var fs = gl.createShader(gl.FRAGMENT_SHADER);
 	gl.shaderSource(fs, fragCode);
-	gl.compileShader(fs);
 	
-	compiled = gl.getShaderParameter(fs, gl.COMPILE_STATUS);
-	console.log("Compiled: " + compiled);
-	var compilation = gl.getShaderInfoLog(fs);
-	console.log("Shader log: " + compilation);
-	if(!compiled) return;
+	var compiled = compile(fs);
+	play == play && compiled;
+	if(!compiled) {
+		return;
+	}
 	
 	// Shader program
 	sp = null;
