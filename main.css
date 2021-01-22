@@ -52,9 +52,13 @@ button {
 .log > span {
 	display: block;
 }
+
 .green {
 	color: green;
 }
 .red {
 	color: red;
+}
+.hidden {
+	display: none;
 }
