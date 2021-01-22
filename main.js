@@ -1,3 +1,5 @@
+//"use strict";
+
 window.onerror = function() {
 	console.error(...[arguments]);
 };
@@ -57,7 +59,9 @@ var sp, il, compiled;
 var translation = [0, 0], zoom = 1;
 var mouse = [0, 0, 0];
 var editor;
+var texture;
 var themeSwitch, theme = 0;
+var pixelatedNumsEl;
 var iTime = 0, startTime = 0, timeEl, displayTimeInMillis = false;
 var restartBtn, playPauseBtn, play = true;
 var fpsEl, lastFramerateCheckTime = 0, frames = 0;
@@ -72,8 +76,8 @@ window.addEventListener("load", () => {
 	}
 	can.onmousemove = function(e) {
 		var box = can.getBoundingClientRect();
-		var x = e.pageX - box.x;
-		var y = e.pageY - box.y;
+		var x = (e.pageX - box.x) / box.width * can.width;
+		var y = (e.pageY - box.y) / box.height * can.height;
 		mouse[0] = x;
 		mouse[1] = y;
 		console.log("mousemove", [mouse[0], mouse[1]]);
@@ -104,6 +108,12 @@ window.addEventListener("load", () => {
 		if(!play) {
 			animate();
 		}
+	});
+	pixelatedNumsEl = selectEl("#pixelatedEl");
+	pixelatedNumsEl.addEventListener("change", () => {
+		var y = pixelatedNumsEl.checked;
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, y? gl.NEAREST : gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, y? gl.NEAREST : gl.LINEAR);
 	});
 	timeEl = selectEl("#timeEl");
 	timeEl.addEventListener("click", () => {
@@ -148,6 +158,28 @@ function start() {
 	editor.setTheme("ace/theme/pastel_on_dark");
 	editor.session.setMode("ace/mode/glsl");
 	editor.setOption("fontSize", "16px");
+	
+	// The font texture!!
+	texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	var defaultPixel = new Uint8Array([0, 0, 0, 255]);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, defaultPixel);
+	var img = new Image();
+	img.onload = function() {
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+		
+		// Settings??
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	};
+	img.onerror = function() {
+		console.log("Aww, snap! The font texture failed to load.");
+		
+	};
+	img.src = "font.png";
 	
 	// The quad
 	var verts = [
