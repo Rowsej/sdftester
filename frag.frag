@@ -12,6 +12,8 @@ uniform sampler2D iFont;
 
 #define FONT_THRESHOLD .4
 //#define FONT_THRESHOLD mod(iTime, 10.) / 10.
+#define MAX_DECIMAL_PLACES 3
+#define MAX_DIGITS 16
 
 #define NUMBER_0 0.
 #define NUMBER_1 1.
@@ -32,7 +34,7 @@ float sdf(vec2 uv) {
 }
 /*SDFEND*/
 
-float number(float n, vec2 b, vec2 dims, vec2 p) {
+float digit(float n, vec2 b, vec2 dims, vec2 p) {
 	p = (p - b) / dims;
 	if(min(p.x, p.y) < 0. || max(p.x, p.y) > 1.) {
 		return 0.;
@@ -59,10 +61,69 @@ float number(float n, vec2 b, vec2 dims, vec2 p) {
 		return stuffs.z;
 	}
 }
+float number(float n, vec2 b, vec2 dims, vec2 p) {
+	int l = 0;
+	float digits[32];
+	bool wasNeg = sign(n) == -1.;
+	n = abs(n);
+	bool hasGoneIntoDec = false;
+	float m = .1;
+	for(int i = 0; i < MAX_DIGITS; i++) {
+		if(n - mod(n, m) > 0.) {
+			m *= 10.;
+		} else {
+			break;
+		}
+	}
+	for(int i = 0; i < MAX_DIGITS; i++) {
+		m /= 10.;
+		if(wasNeg && i == 0) {
+			digits[i] = NUMBER_MINUS_SIGN;
+			l++;
+			n = abs(n);
+			continue;
+		}
+		if(floor(n) == 0. && i == (wasNeg? 1 : 0)) {
+			digits[i] = NUMBER_0;
+			l++;
+			continue;
+		}
+		if(m == .1 && !hasGoneIntoDec) {
+			digits[i] = NUMBER_DECIMAL_PLACE;
+			m *= 10.;
+			hasGoneIntoDec = true;
+			continue;
+		}
+		digits[i] = (n - mod(n, m)) / m;
+		n = mod(n, m);
+		l++;
+		if(n == 0.) {
+			break;
+		}
+	}
+	
+	float values[32];
+	for(int i = 0; i < MAX_DIGITS; i++) {
+		if(i >= l) break;
+		values[i] = digit(digits[i], b + vec2(dims.x * float(i), 0.), dims, p);
+	}
+	float value = 0.;
+	for(int i = 0; i < MAX_DIGITS; i++) {
+		if(i >= l) break;
+		value = max(value, values[i]);
+	}
+	//return digit(n, b, dims, p);
+	return value;
+}
 
 vec3 themeClassic(vec2 uv, float d, vec4 mouse) {
 	//if(mouse.x > 0.) {
-		float n = number(/*mod(floor(iTime), 12.)*/ NUMBER_4, mouse.zw, vec2(0.1, 0.2), uv);
+		//float n = digit(/*mod(floor(iTime), 12.)*/ NUMBER_4, mouse.zw, vec2(.1, .2), uv);
+		//float n = number(mouse.y, mouse.zw, vec2(.05, .1), uv);
+		//float n = number(512.5, mouse.zw, vec2(.05, .1), uv);
+		//float n = number(42.0, mouse.zw, vec2(.05, .1), uv);
+		//float n = number(-0.5412, mouse.zw, vec2(.05, .1), uv);
+		float n = number(0., mouse.zw, vec2(.05, .1), uv);
 		if(n > FONT_THRESHOLD) {
 			return vec3(0.);
 		}
