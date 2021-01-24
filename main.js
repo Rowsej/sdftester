@@ -80,10 +80,16 @@ window.addEventListener("load", () => {
 		var y = (e.pageY - box.y) / box.height * can.height;
 		mouse[0] = x;
 		mouse[1] = y;
+		if(!play) {
+			animate();
+		}
 		console.log("mousemove", [mouse[0], mouse[1]]);
 	};
 	can.onmouseleave = function() {
 		mouse[2] = 0;
+		if(!play) {
+			animate();
+		}
 		console.log("mouseleave");
 	};
 	gl = can.getContext("webgl") || can.getContext("experimental-webgl");
@@ -239,16 +245,8 @@ function start() {
 	animate();
 }
 function animate() {
-	iTime = performance.now() - startTime;
-	timeEl.innerHTML = displayTimeInMillis? ~~iTime + "ms" : (iTime / 1000).toFixed(2) + "s";
-	
-	frames++;
-	var n = performance.now();
-	var t = n - lastFramerateCheckTime;
-	if(t > 500) {
-		fpsEl.innerHTML = (frames / t * 1000).toFixed(2) + " FPS";
-		frames = 0;
-		lastFramerateCheckTime = n;
+	if(play) {
+		updateEls();
 	}
 	
 	passAttr(sp, "2f", "iResolution", [can.width, can.height]);
@@ -263,6 +261,19 @@ function animate() {
 	
 	if(play) {
 		window.requestAnimationFrame(animate);
+	}
+}
+function updateEls() {
+	iTime = performance.now() - startTime;
+	timeEl.innerHTML = displayTimeInMillis? ~~iTime + "ms" : (iTime / 1000).toFixed(2) + "s";
+	
+	frames++;
+	var n = performance.now();
+	var t = n - lastFramerateCheckTime;
+	if(t > 500) {
+		fpsEl.innerHTML = (frames / t * 1000).toFixed(2) + " FPS";
+		frames = 0;
+		lastFramerateCheckTime = n;
 	}
 }
 function run() {
