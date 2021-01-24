@@ -119,11 +119,11 @@ float number(float n, vec2 b, vec2 dims, vec2 p) {
 vec3 themeClassic(vec2 uv, float d, vec4 mouse) {
 	//if(mouse.x > 0.) {
 		//float n = digit(/*mod(floor(iTime), 12.)*/ NUMBER_4, mouse.zw, vec2(.1, .2), uv);
-		//float n = number(mouse.y, mouse.zw, vec2(.05, .1), uv);
+		float n = number(mouse.y, mouse.zw, vec2(.05, .1), uv);
 		//float n = number(512.5, mouse.zw, vec2(.05, .1), uv);
 		//float n = number(42.0, mouse.zw, vec2(.05, .1), uv);
 		//float n = number(-0.5412, mouse.zw, vec2(.05, .1), uv);
-		float n = number(0., mouse.zw, vec2(.05, .1), uv);
+		//float n = number(0., mouse.zw, vec2(.05, .1), uv);
 		if(n > FONT_THRESHOLD) {
 			return vec3(0.);
 		}
